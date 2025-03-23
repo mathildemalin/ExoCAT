@@ -5,4 +5,4 @@ ExoCAT presents codes developed as part of GTO ExoMIRI (GTO 1277 and 1194 : Bocc
 - Notebooks are available to show exemple for stellar subtraction, and photometry analysis.
 - More tools and notebooks can be available upon request.
 
-ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, webbpsf, jwst pipeline, 
+ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, webbpsf, jwst pipeline.
