@@ -5,6 +5,6 @@ ExoCAT presents codes and tools developed as part of GTO ExoMIRI (GTO 1277 and 1
 - Notebooks are available to show exemple for stellar subtraction, and photometry analysis.
 - More tools and notebooks can be available upon request.
 
-Cross-correlation and molecular mapping analysis tools coming soon (GO 3647, GO 4829)
+Cross-correlation and molecular mapping analysis tools coming soon for MIRI-MRS data (GO 3647, GO 4829)
 
 ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, webbpsf, jwst pipeline.
