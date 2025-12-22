@@ -1,0 +1,5 @@
+Metadata-Version: 2.1
+Name: ExoCAT
+Version: 0.0.1
+Summary: Codes to analyse JWST/MIRI high-contrast imaging data for exoplanets : MIRI coronagraphs + MIRI/MRS HCI and cross-correlation
+Author: Mathilde Mâlin
