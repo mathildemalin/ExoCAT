@@ -1,0 +1,31 @@
+{
+    "asn_type": "image2",
+    "asn_rule": "DMSLevel2bBase",
+    "version_id": null,
+    "code_version": "1.20.2",
+    "degraded_status": "No known degraded exposures in association.",
+    "program": "noprogram",
+    "constraints": "No constraints",
+    "asn_id": "a3001",
+    "asn_pool": "TWA7_pool",
+    "products": [
+        {
+            "name": "TWA7_dither1",
+            "members": [
+                {
+                    "expname": "/Users/mmalin/MIRI/Corono/DATA/TWA7/TWA7_outputs/stage1/jw03662001001_02101_00001_mirimage_rate.fits",
+                    "exptype": "science"
+                }
+            ]
+        },
+        {
+            "name": "TWA7_dither2",
+            "members": [
+                {
+                    "expname": "/Users/mmalin/MIRI/Corono/DATA/TWA7/TWA7_outputs/stage1/jw03662001001_02101_00002_mirimage_rate.fits",
+                    "exptype": "science"
+                }
+            ]
+        }
+    ]
+}
