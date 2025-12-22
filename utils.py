@@ -1,6 +1,3 @@
-#    Useful functions commonly used in MIRI data analysis.
-#  ____________________________________________________________________________________________
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage
@@ -9,6 +6,150 @@ from astropy.modeling import models, fitting
 
 
 
+###################################################################################################
+# Masks
+
+def create_circular_mask(h, w, center=None, radius=None):
+    if center is None:  # use the middle of the image
+        center = (int(w/2), int(h/2))
+    if radius is None:  # use the smallest distance between the center and image size
+        radius = min(center[0], center[1], w-center[0], h-center[1])
+
+    Y, X = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((X - center[0])**2 + (Y - center[1])**2)
+
+    mask = dist_from_center <= radius
+    return mask
+
+def createAnnularMask(h, w, center, small_radius, big_radius):
+    if center is None:  # use the middle of the image
+        center = (int(w/2), int(h/2))
+
+    Y, X = np.ogrid[:h, :w]
+    distance_from_center = np.sqrt((X - center[0])**2 + (Y - center[1])**2)
+
+    mask = (small_radius <= distance_from_center) & (distance_from_center <= big_radius)
+    return mask
+
+
+def create_cone_mask(nx, ny, center, cone_axis_angle, angle_deg, length):
+    """
+    Create a 2D cone-shaped mask.
+    
+    Parameters
+    ----------
+    nx, ny : int
+        Dimensions of the 2D array.
+    center : tuple of float
+        (x0, y0) coordinates of the cone apex.
+	cone_axis_angle : float
+		Define the cone axis (pointing upward, along +y)
+    angle_deg : float
+        Full opening angle of the cone in degrees.
+    length : float
+        Maximum radius/length of the cone.
+        
+    Returns
+    -------
+    mask : 2D numpy array
+        Boolean mask (True inside the cone, False outside).
+    """
+    y, x = np.indices((ny, nx))
+    x0, y0 = center
+    dx = x - x0
+    dy = y - y0
+    r = np.sqrt(dx**2 + dy**2)
+    
+    # Angle of each pixel relative to the cone axis (assumed along +y by default)
+    pixel_angle = np.degrees(np.arctan2(dy, dx))
+    
+    # Check if pixel is within angle and length
+    angle_mask = np.abs(pixel_angle - cone_axis_angle) <= (angle_deg / 2)
+    radius_mask = r <= length
+    
+    mask = angle_mask & radius_mask
+    return mask
+
+
+###################################################################################################
+### Provided by N. Skaf and J. Mazoyer
+
+def cart2polar(xx, yy):
+    """
+    Convert cartesian coordinates into polar coordinates
+    :param xx: 2D-square array of x linear coordinates
+    :param yy: 2D-square array of y linear coordinates - should have same dimensions as xx
+    :return: r, xx/yy like array, normalized radius
+             theta, xx/yy like array, angle in radian
+    """
+    phi = np.arctan2(-yy, -xx)
+    theta = phi - np.min(phi)
+    r = np.sqrt(xx**2 + yy**2)
+    return r, theta
+
+def mean_full_ring(im, pos_center, width_ring, r_min, r_max):
+    """
+    Calculates the robust mean of the full ring - like specal does.
+    :param width_ring: width of the ring in pixels (can be 1 pixel)
+    :param r_min: starting radius of the rings in pixels (can be 0)
+    :param r_max: end radius of the rings in pixels
+    :return: mean, separation arrays
+    """
+    x = np.arange(np.shape(im)[1]) - pos_center[0]
+    y = np.arange(np.shape(im)[0]) - pos_center[1]
+
+    xx, yy = np.meshgrid(x, y)
+    r, theta = cart2polar(xx, yy)
+
+    mean = np.zeros(r_max)
+    separation = np.zeros(r_max)
+    circle = np.zeros(r.shape)
+
+    for i in range(r_min, r_max):
+        circle[r < i + width_ring] = 1
+        circle[r < i] = 0
+        im_ring = im * circle
+        separation[i] = r_min + i
+        im_nonan = np.nan_to_num(im_ring)
+        index = np.where(im_nonan != 0)
+        im_ring_values = im_nonan[index]
+        mean[i] = np.mean(im_ring_values)
+
+    return mean, separation
+
+def std_full_ring(im, pos_center, sigma, width_ring, r_min, r_max):
+    """
+    Calculates the robust standard deviation of the full ring - like specal does.
+    :param width_ring: width of the ring in pixels (can be 1 pixel)
+    :param r_min: starting radius of the rings in pixels (can be 0)
+    :param r_max: end radius of the rings in pixels
+    :param sigma: multiplicative factor
+    :return: std, separation arrays
+    """
+    x = np.arange(np.shape(im)[1]) - pos_center[0]
+    y = np.arange(np.shape(im)[0]) - pos_center[1]
+
+    xx, yy = np.meshgrid(x, y)
+    r, theta = cart2polar(xx, yy)
+
+    std = np.zeros(r_max)
+    separation = np.zeros(r_max)
+    circle = np.zeros(r.shape)
+
+    for i in range(r_min, r_max):
+        circle[r < i + width_ring] = 1
+        circle[r < i] = 0
+        im_ring = im * circle
+        separation[i] = r_min + i
+        im_nonan = np.nan_to_num(im_ring)
+        index = np.where(im_nonan != 0)
+        im_ring_values = im_nonan[index]
+        std[i] = np.std(im_ring_values) * sigma
+
+    return std, separation
+
+
+#########
 def rotate_images(img, center_pix, window_size, ang, reshape=False):
     """
     Rotates an image around a specified center pixel with a given angle.
@@ -54,92 +195,6 @@ def rotate_images(img, center_pix, window_size, ang, reshape=False):
     return rot_img
 
 
-###################################################################################################
-# Masks
-
-def create_circular_mask(h, w, center=None, radius=None):
-
-    if center is None: # use the middle of the image
-        center = (int(w/2), int(h/2))
-    if radius is None: # use the smallest distance between the center and image size
-        radius = min(center[0], center[1], w-center[0], h-center[1])
-
-    Y, X = np.ogrid[:h, :w]
-    dist_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
-
-    mask = dist_from_center <= radius
-    
-    return mask
-
-def createAnnularMask(h, w, center, small_radius, big_radius):
-    
-    if center is None: # use the middle of the image
-        center = (int(w/2), int(h/2))
-        
-    Y, X = np.ogrid[:h,:w]
-    distance_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
-
-    mask = (small_radius <= distance_from_center) & (distance_from_center <= big_radius)
-
-    return mask
-
-
-##########
-### Provided by N. Skaf and J. Mazoyer
-
-def cart2polar(xx, yy):
-    """
-    Convert cartesian coordinates into polar coordinates
-    :param xx: 2D-square array of x linear coordinates
-    :param yy: 2D-square array of y linear coordinates - should have same dimensions as xx
-    :return: r, xx/yy like array, normalized radius
-            theta, xx/yy like array, angle in radian
-    """
-    phi = np.arctan2(-yy, -xx)
-    theta = phi - np.min(phi)
-    r = np.sqrt(xx ** 2 + yy ** 2)
-    return r, theta
-
-def mean_full_ring(im,pos_center, width_ring, r_min, r_max):
-    """
-    calculates the robust mean of the full ring - like specal does 
-    :param width_ring: width of the ring of the std, in pixel. can be 1 pixel
-    :r_min: starting radius of the rings, in pixel. can be 0 = center. 
-    :r_max: end radius of the rings, in pixel.  
-    :return: mean, separation
-    """
-    
-    x = np.arange(np.shape(im)[1]) - pos_center[0]
-    y = np.arange(np.shape(im)[0]) - pos_center[1]
-
-    xx, yy = np.meshgrid(x, y)
-    r, theta = cart2polar(xx, yy)
-
-    sep = np.array([])
-    val = np.array([])
-
-    circle = np.zeros(r.shape)
-    mean = np.zeros((r_max))
-    separation = np.zeros((r_max))
-    
-    for i in range(r_min, r_max):
-        circle[r < i + width_ring] = 1
-        circle[r < i] = 0
-        im_ring = np.zeros((im.shape))
-        im_ring = im * circle
-        separation[i] = (r_min + i) #* 0.045  # separation in arcsec
-        
-        im_nonan = np.nan_to_num(im_ring)  # necessary to remove the nans
-        # finds indices where image values are != 0
-        index = np.where(im_nonan != 0)
-        im_ring_values = im_nonan[index]  # gives the index values.
-       
-        mean[i] = np.mean(im_ring_values) #* 5  # / psfmax# * 5 for 5 sigma
-
-    return mean, separation
-
-
-###############
 
 def measure_position_fit(cube, initial_position, plot=False, window=(5, 3)):
     """
