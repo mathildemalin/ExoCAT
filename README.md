@@ -1,4 +1,4 @@
-<b>ExoCAT : Exoplanet Coronagraphy and Cross-correlation analysis tools</b> 
+<b>ExoCAT : Exoplanet Coronagraphy and Cross-correlation Analysis Tools</b> 
 
 ExoCAT presents codes and tools developed as part of GTO ExoMIRI (GTO 1277 and 1194 : Boccaletti et al. 2024, Mâlin et al. 2024, Mâlin et al. 2025) and used in the context of MIRI coronagraphy data analysis (e.g., GO 3662,  Lagrange et al. 2025). 
 
