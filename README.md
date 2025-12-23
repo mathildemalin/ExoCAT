@@ -7,4 +7,4 @@ It also contains tools for MIRI-MRS data analysis, especially cross-correlation 
 - Notebooks are available to show exemple of analysis with MIRI coronagraphy stellar subtraction and photometry in the case for TWA 7 b.
 - More tools and notebooks can be available upon request.
 
-ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, webbpsf, jwst pipeline.
+ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, stpsf, jwst pipeline.
