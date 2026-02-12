@@ -268,3 +268,4 @@ def measure_position_fit(cube, initial_position, plot=False, window=(5, 3)):
         plt.show()
 
     return final_position
+
