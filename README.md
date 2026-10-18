@@ -7,8 +7,8 @@ Tools developed for MIRI coronagraphic data analysis as part of the ExoMIRI GTO 
 Example notebooks for stellar PSF subtraction and planet photometry measurement.
 
 ### MIRI MRS
-Notebooks with convenience functions for reading and handling MIRI MRS data cubes, as well as tools for spectral cross-correlation analysis (Molecular mapping).
-These tools have been used to analyze data from ERS 1386, GO 3647, and GO 4829. More notebooks can be available upon request
+Notebooks with convenience functions for reading and handling MIRI MRS data cubes, as well as tools for spectral cross-correlation analysis (i.e. molecular mapping).
+These tools have been used to analyze data from ERS 1386 (Mâlin et al. 2026), GO 3647 and GO 4829 (on-going analysis). More notebooks can be available upon request.
 
 ## Dependencies
 ExoCAT relies on the following packages:
