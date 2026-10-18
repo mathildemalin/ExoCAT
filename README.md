@@ -1,10 +1,34 @@
-<b>ExoCAT</b>
+# ExoCAT: Exoplanet mid-infrared Coronagraphy & Analysis Tools
 
-ExoCAT presents codes and tools developed as part of GTO ExoMIRI (GTO 1277 and 1194 : Boccaletti et al. 2024, Mâlin et al. 2024, Mâlin et al. 2025) and used in the context of MIRI coronagraphy data analysis (e.g., GO 3662,  Lagrange et al. 2025).
+ExoCAT is a collection of codes and tools developed for the analysis of **JWST/MIRI** data.
 
-- Notebooks are available to show exemple for stellar subtraction, and photometry analysis.
-- More tools and notebooks can be available upon request.
+## Contents
 
-Cross-correlation and molecular mapping analysis tools coming soon for MIRI-MRS data (used to analyse data from programs : ERS 1386, GO 3647, GO 4829).
+### MIRI coronagraphy
+Tools developed for MIRI coronagraphic data analysis as part of the ExoMIRI GTO programs (GTO 1277 and GTO 1194; Boccaletti et al. 2024, Mâlin et al. 2024, Mâlin et al. 2025), and also applied to other MIRI coronagraphy programs (e.g., GO 3662; Lagrange et al. 2025).
 
-ExoCAT relies on many other packages and software : numpy, astropy, scipy, matplotlib, photutils, webbpsf, jwst pipeline.
+Example notebooks cover:
+- Stellar (PSF) subtraction
+- Photometry
+
+### MIRI MRS
+Notebooks with convenience functions for reading and handling MIRI MRS data cubes, as well as tools for:
+- Cross-correlation analysis
+- Molecular mapping
+
+These tools have been used to analyze data from ERS 1386, GO 3647, and GO 4829.
+
+## Dependencies
+
+ExoCAT relies on the following packages:
+- [numpy](https://numpy.org/)
+- [scipy](https://scipy.org/)
+- [astropy](https://www.astropy.org/)
+- [matplotlib](https://matplotlib.org/)
+- [photutils](https://photutils.readthedocs.io/)
+- [webbpsf](https://webbpsf.readthedocs.io/)
+- [jwst pipeline](https://jwst-pipeline.readthedocs.io/)
+
+## Additional tools
+
+More tools and notebooks are available upon request.
