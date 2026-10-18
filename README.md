@@ -4,7 +4,7 @@ ExoCAT is a collection of codes and tools developed for the analysis of **JWST/M
 ## Contents
 ### MIRI coronagraphy
 Tools developed for MIRI coronagraphic data analysis as part of the ExoMIRI GTO programs (GTO 1277 and GTO 1194; Boccaletti et al. 2024, Mâlin et al. 2024, Mâlin et al. 2025), and also applied to other MIRI coronagraphy programs (e.g., GO 3662; Lagrange et al. 2025).
-Example notebooks for stellar (PSF) subtraction and photometry measurement.
+Example notebooks for stellar PSF subtraction and planet photometry measurement.
 
 ### MIRI MRS
 Notebooks with convenience functions for reading and handling MIRI MRS data cubes, as well as tools for spectral cross-correlation analysis (Molecular mapping).
