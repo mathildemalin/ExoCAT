@@ -1,4 +1,4 @@
-# Exoplanet mid-infrared Coronagraphy & Analysis Tools (ExoCAT) #
+# Exoplanet Coronagraphy & Analysis Tools (ExoCAT) #
 ExoCAT is a collection of codes and tools developed for the analysis of **JWST/MIRI** data.
 
 ## Contents
