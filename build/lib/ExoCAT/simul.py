@@ -29,6 +29,7 @@ def simulation_MRS_single_band(wave_model, flux_model_planet,
                                mrs_wavelengths=None,mrs_star_cube=None,mrs_planet_cube=None,
                                target_shape=(50, 50),
                                wave_model_cc=None, model_cc=None,
+                               pos_star = None, # useful if the PSF core is outside the FoV
                                # save + plot options :
                                system_name=None, output_dir=None,
                                plot_models=False,
@@ -144,17 +145,18 @@ def simulation_MRS_single_band(wave_model, flux_model_planet,
     # =========================================================================
     # Determine positions
     # =========================================================================
-    # Initial guess: center of the spatial dimensions of the cube
-    image_median = np.nanmedian(psfs_star, axis=0)
-    y_init, x_init = np.unravel_index(np.nanargmax(image_median), image_median.shape)
-    pos_init = (x_init, y_init)
-    # Fit the stellar position
-    pos_star = measure_position_fit(psfs_star, pos_init, window=(10, 10), plot=False)
-    # Theoretical planet position
-    theta_rad = np.deg2rad(theta_deg)
-    pos_planet = (pos_star[0] + (offset_planet * np.cos(theta_rad)) / mrs_pixel_scales[band],
-                  pos_star[1] + (offset_planet * np.sin(theta_rad)) / mrs_pixel_scales[band],)
-  
+    if pos_star is None :
+        # Initial guess: center of the spatial dimensions of the cube
+        image_median = np.nanmedian(psfs_star, axis=0)
+        y_init, x_init = np.unravel_index(np.nanargmax(image_median), image_median.shape)
+        pos_init = (x_init, y_init)
+        # Fit the stellar position
+        pos_star = measure_position_fit(psfs_star, pos_init, window=(10, 10), plot=False)
+        # Theoretical planet position
+        theta_rad = np.deg2rad(theta_deg)
+        pos_planet = (pos_star[0] + (offset_planet * np.cos(theta_rad)) / mrs_pixel_scales[band],
+                      pos_star[1] + (offset_planet * np.sin(theta_rad)) / mrs_pixel_scales[band],)
+    
     # =========================================================================
     # Load aperture correction -> useful to correct for aperture correction
     # =========================================================================

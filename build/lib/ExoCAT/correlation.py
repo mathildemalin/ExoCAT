@@ -5,7 +5,7 @@ from scipy import interpolate, stats, signal
 import h5py
 
 from ExoCAT.degrade_spectrum import degrade_spectrum 
-from ExoCAT.utils import create_circular_mask, mean_full_ring
+from ExoCAT.utils import create_circular_mask, mean_full_ring, createAnnularMask
 from ExoCAT.degrade_spectrum import interp_cumsum
 
 ##########################################################################################
@@ -214,74 +214,237 @@ def load_spectrum_old(path, Rp=1.0, dstar=1.0, degraded=False, res=None,
 ##########################################################################################
 # Empirical method to measure the S/N (detailed in Mâlin et al. 2023)
 
-def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, plot_profil=False, plot_final=False, save_fig=False, path=None):
+# def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, plot_profil=False, plot_final=False, save_fig=False, path=None):
+#     """
+#     Measure the signal-to-noise ratio (SNR) of a correlation map around a planet position.
+#     SNR is defined experimentally based on the size of the correlation pattern (from MIRI/MRS simulations).
+
+#     Returns:
+#         SNR_final: SNR using integrated signal above noise
+#         SNR_1spaxel: SNR at the planet's peak spaxel
+#         cc: maximum correlation value around the planet
+#     """
+
+#     # Corrected planet position
+#     cc_patch = cc_maps[position_planet[1]-1:position_planet[1]+2, position_planet[0]-1:position_planet[0]+2]
+#     cc = np.nanmax(cc_patch)
+#     pos_y, pos_x = np.where(cc_maps == cc)
+
+#     # Mask planet for noise estimation
+#     h, w = cc_maps.shape[:2]
+#     mask_planets = create_circular_mask(h, w, center=(pos_x, pos_y), radius=6)
+#     data_noise = np.ma.array(cc_maps, mask=mask_planets)
+
+#     # Noise statistics
+#     noise_values = data_noise.compressed()
+#     std, mean = np.nanstd(noise_values), np.nanmean(noise_values)
+#     cc_val_noise = np.linspace(np.nanmin(noise_values), np.nanmax(noise_values))
+#     # SNR for a single spaxel
+#     SNR_1spaxel = cc / std
+
+#     # Plot noise distribution
+#     if plot_dist:
+#         plt.figure(figsize=(6, 4))
+#         plt.hist(data_noise.flatten(), bins=60, color="gray", alpha=0.5, density=True)
+#         plt.plot(cc_val_noise, stats.norm.pdf(cc_val_noise, mean, std), "r-", 
+#                  label=f"Gaussian fit: mean={mean:.3f}, σ={std:.3f}")
+#         plt.plot([cc_maps[pos_y, pos_x]]*10, np.linspace(0, 10, 10), "b--", 
+#                  label=f"Planet correlation = {cc_maps[pos_y, pos_x][0]:.3f}")
+#         plt.xlabel("Correlation values", fontsize=14)
+#         plt.ylabel("Histogram", fontsize=14)
+#         plt.legend(fontsize=12)
+#         plt.savefig("histogramme_noise.pdf")
+#         plt.show()
+
+#     # Optional noise plotting
+#     if plot_noise:
+#         print('Planet correlation:', cc)
+#         print('Noise std:', std)
+#         print('3*Noise:', 3*std)
+#         plt.figure(figsize=(6, 4))
+#         plt.title("Noise with masked planets")
+#         plt.imshow(data_noise, origin="lower", cmap="Blues")
+#         plt.colorbar()
+#         plt.show()
+
+#     # Profile of correlation pattern
+#     rmax = 5
+#     mean_cc, separation_cc = mean_full_ring(cc_maps, [pos_x, pos_y], width_ring=1, r_min=0, r_max=rmax+1)
+#     f = interpolate.interp1d(separation_cc, mean_cc)
+#     range_sep = np.arange(0, rmax+0.01, 0.01)
+
+#     try:
+#         idx_noise = np.where(f(range_sep) < 3*std)[0][0]
+#         r_cc = range_sep[idx_noise]
+#     except:
+#         r_cc = 5 if np.nanmin(f(range_sep)) > 3*std else 0
+
+#     if np.nanmin(f(range_sep)) > cc/2:
+#         r_cc = 0
+
+#     # Plot correlation profile
+#     if plot_profil:
+#         plt.plot(separation_cc, mean_cc, "+-", color="dodgerblue", label="Correlation profile")
+#         plt.plot(separation_cc, np.ones(len(separation_cc))*std, "g--", label="Noise level")
+#         plt.plot(separation_cc, np.ones(len(separation_cc))*3*std, "--", color='darkgreen', label="3 x Noise")
+#         plt.plot([r_cc]*len(separation_cc), np.linspace(np.nanmin(mean_cc), np.nanmax(mean_cc), len(separation_cc)), "k--", label="r_cc")
+#         plt.xlabel("Separation from planet (pixels)", fontsize=14)
+#         plt.ylabel("Mean correlation", fontsize=14)
+#         plt.legend()
+#         plt.show()
+
+#     # Recover pixels above noise
+#     mask_planets = create_circular_mask(h, w, center=(pos_x, pos_y), radius=int(round(r_cc)))
+#     data_planets = np.ma.array(cc_maps, mask=~mask_planets)
+#     mask_pl = np.ma.masked_where(data_planets < 0.5*cc, data_planets)
+
+#     x, y = np.where(mask_pl.mask == False)
+#     val_pl = data_planets[x, y]
+#     signal_pl = np.nansum(val_pl)
+#     nb_px_pl = len(val_pl)
+
+#     if r_cc == -1:
+#         SNR_final = np.nan
+#     elif nb_px_pl == 0:
+#         SNR_final = SNR_1spaxel
+#     else:
+#         SNR_final = signal_pl / (np.sqrt(nb_px_pl) * std)
+
+#     # Final plotting
+#     if plot_final:
+#         print("FWHM cc:", cc/2)
+#         print("r_cc:", r_cc)
+#         print("3*std:", 3*std)
+#         print("Noise std:", std)
+#         print("Nb pixels planet:", nb_px_pl)
+
+#         fig, ax = plt.subplots(1, 2, figsize=(10, 4), tight_layout=True)
+#         # Profile plot
+#         ax[0].plot(separation_cc, mean_cc, "+-", color="dodgerblue", label='Correlation profile')
+#         ax[0].plot(separation_cc, np.ones(len(separation_cc))*std, "g--", label="Noise level")
+#         ax[0].plot(separation_cc, np.ones(len(separation_cc))*3*std, "--", color='darkgreen', label="3 x Noise")
+#         ax[0].plot([r_cc]*len(separation_cc), np.linspace(np.nanmin(mean_cc), np.nanmax(mean_cc), len(separation_cc)), "k--", label="r_cc")
+#         ax[0].set_xlabel("Separation (pixels)", fontsize=14)
+#         ax[0].set_ylabel("Mean correlation", fontsize=14)
+#         ax[0].legend()
+
+#         # Mask and noise plot
+#         ax[1].set_title(f"S/N planet = {SNR_final:.3f}", fontsize=14)
+#         im = ax[1].imshow(data_noise, origin="lower", cmap="Blues")
+#         fig.colorbar(im, ax=ax[1], orientation="vertical")
+#         im2 = ax[1].imshow(mask_pl, origin="lower", cmap="Reds")
+#         cbar2 = fig.colorbar(im2, ax=ax[1], orientation="vertical")
+#         cbar2.set_label("Correlation coefficient", rotation=270, size=12, labelpad=75)
+#         if save_fig and path:
+#             plt.savefig(path + "SNR_method.pdf")
+#         plt.show()
+
+#     return SNR_final, SNR_1spaxel, cc
+
+
+def SNR_profil_cc(cc_maps, position_planet,
+                  noise_region="fov", star_position=None, sep_planet=None, annulus_width=4,
+                  planet_mask_radius=6,
+                  plot_dist=False, plot_noise=False, plot_profil=False, plot_final=False,
+                  save_fig=False, path=None):
     """
     Measure the signal-to-noise ratio (SNR) of a correlation map around a planet position.
     SNR is defined experimentally based on the size of the correlation pattern (from MIRI/MRS simulations).
-
+ 
+    Noise options:
+        noise_region="fov"     : noise from all spaxels of the FoV outside the planet mask (default, original behaviour)
+        noise_region="annulus" : noise from spaxels in an annulus at the planet's separation from the star,
+                                 excluding the planet mask.
+            star_position : (x, y) of the star in pixels. Defaults to the image centre.
+            sep_planet    : planet separation from the star in pixels. If None, computed from
+                            star_position and the planet's peak position.
+            annulus_width : full width of the annulus in pixels (annulus = sep_planet +/- annulus_width/2).
+        planet_mask_radius : radius (pixels) of the circular mask around the planet excluded from the noise.
+ 
     Returns:
         SNR_final: SNR using integrated signal above noise
         SNR_1spaxel: SNR at the planet's peak spaxel
         cc: maximum correlation value around the planet
     """
-
+ 
     # Corrected planet position
     cc_patch = cc_maps[position_planet[1]-1:position_planet[1]+2, position_planet[0]-1:position_planet[0]+2]
     cc = np.nanmax(cc_patch)
     pos_y, pos_x = np.where(cc_maps == cc)
-
-    # Mask planet for noise estimation
+ 
+    # Mask planet for noise estimation (True = excluded)
     h, w = cc_maps.shape[:2]
-    mask_planets = create_circular_mask(h, w, center=(pos_x, pos_y), radius=6)
-    data_noise = np.ma.array(cc_maps, mask=mask_planets)
-
+    mask_planets = create_circular_mask(h, w, center=(pos_x, pos_y), radius=planet_mask_radius)
+ 
+    if noise_region == "fov":
+        noise_mask = mask_planets
+ 
+    elif noise_region == "annulus":
+        if star_position is None:
+            star_position = ((w - 1) / 2, (h - 1) / 2)
+        if sep_planet is None:
+            sep_planet = np.hypot(pos_x[0] - star_position[0], pos_y[0] - star_position[1])
+        r_in = max(sep_planet - annulus_width / 2, 0)
+        r_out = sep_planet + annulus_width / 2
+        annulus = createAnnularMask(h, w, star_position, r_in, r_out)
+        noise_mask = mask_planets | ~annulus
+ 
+    else:
+        raise ValueError("noise_region must be 'fov' or 'annulus'")
+ 
+    data_noise = np.ma.array(cc_maps, mask=noise_mask)
+ 
     # Noise statistics
     noise_values = data_noise.compressed()
+    noise_values = noise_values[np.isfinite(noise_values)]
+    if noise_values.size < 10:
+        print(f"Warning: only {noise_values.size} spaxels used for the noise estimate.")
     std, mean = np.nanstd(noise_values), np.nanmean(noise_values)
     cc_val_noise = np.linspace(np.nanmin(noise_values), np.nanmax(noise_values))
     # SNR for a single spaxel
     SNR_1spaxel = cc / std
-
+ 
     # Plot noise distribution
     if plot_dist:
         plt.figure(figsize=(6, 4))
-        plt.hist(data_noise.flatten(), bins=60, color="gray", alpha=0.5, density=True)
-        plt.plot(cc_val_noise, stats.norm.pdf(cc_val_noise, mean, std), "r-", 
+        plt.hist(noise_values, bins=60, color="gray", alpha=0.5, density=True)
+        plt.plot(cc_val_noise, stats.norm.pdf(cc_val_noise, mean, std), "r-",
                  label=f"Gaussian fit: mean={mean:.3f}, σ={std:.3f}")
-        plt.plot([cc_maps[pos_y, pos_x]]*10, np.linspace(0, 10, 10), "b--", 
+        plt.plot([cc_maps[pos_y, pos_x]]*10, np.linspace(0, 10, 10), "b--",
                  label=f"Planet correlation = {cc_maps[pos_y, pos_x][0]:.3f}")
         plt.xlabel("Correlation values", fontsize=14)
         plt.ylabel("Histogram", fontsize=14)
         plt.legend(fontsize=12)
         plt.savefig("histogramme_noise.pdf")
         plt.show()
-
+ 
     # Optional noise plotting
     if plot_noise:
+        print('Noise region:', noise_region, f'({noise_values.size} spaxels)')
         print('Planet correlation:', cc)
         print('Noise std:', std)
         print('3*Noise:', 3*std)
         plt.figure(figsize=(6, 4))
-        plt.title("Noise with masked planets")
+        plt.title(f"Noise region ({noise_region}) with masked planet")
         plt.imshow(data_noise, origin="lower", cmap="Blues")
         plt.colorbar()
         plt.show()
-
+ 
     # Profile of correlation pattern
     rmax = 5
     mean_cc, separation_cc = mean_full_ring(cc_maps, [pos_x, pos_y], width_ring=1, r_min=0, r_max=rmax+1)
     f = interpolate.interp1d(separation_cc, mean_cc)
     range_sep = np.arange(0, rmax+0.01, 0.01)
-
+ 
     try:
         idx_noise = np.where(f(range_sep) < 3*std)[0][0]
         r_cc = range_sep[idx_noise]
-    except:
+    except IndexError:
         r_cc = 5 if np.nanmin(f(range_sep)) > 3*std else 0
-
+ 
     if np.nanmin(f(range_sep)) > cc/2:
         r_cc = 0
-
+ 
     # Plot correlation profile
     if plot_profil:
         plt.plot(separation_cc, mean_cc, "+-", color="dodgerblue", label="Correlation profile")
@@ -292,24 +455,24 @@ def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, p
         plt.ylabel("Mean correlation", fontsize=14)
         plt.legend()
         plt.show()
-
+ 
     # Recover pixels above noise
-    mask_planets = create_circular_mask(h, w, center=(pos_x, pos_y), radius=int(round(r_cc)))
-    data_planets = np.ma.array(cc_maps, mask=~mask_planets)
+    mask_r_cc = create_circular_mask(h, w, center=(pos_x, pos_y), radius=int(round(r_cc)))
+    data_planets = np.ma.array(cc_maps, mask=~mask_r_cc)
     mask_pl = np.ma.masked_where(data_planets < 0.5*cc, data_planets)
-
+ 
     x, y = np.where(mask_pl.mask == False)
     val_pl = data_planets[x, y]
     signal_pl = np.nansum(val_pl)
     nb_px_pl = len(val_pl)
-
+ 
     if r_cc == -1:
         SNR_final = np.nan
     elif nb_px_pl == 0:
         SNR_final = SNR_1spaxel
     else:
         SNR_final = signal_pl / (np.sqrt(nb_px_pl) * std)
-
+ 
     # Final plotting
     if plot_final:
         print("FWHM cc:", cc/2)
@@ -317,7 +480,7 @@ def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, p
         print("3*std:", 3*std)
         print("Noise std:", std)
         print("Nb pixels planet:", nb_px_pl)
-
+ 
         fig, ax = plt.subplots(1, 2, figsize=(10, 4), tight_layout=True)
         # Profile plot
         ax[0].plot(separation_cc, mean_cc, "+-", color="dodgerblue", label='Correlation profile')
@@ -327,7 +490,7 @@ def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, p
         ax[0].set_xlabel("Separation (pixels)", fontsize=14)
         ax[0].set_ylabel("Mean correlation", fontsize=14)
         ax[0].legend()
-
+ 
         # Mask and noise plot
         ax[1].set_title(f"S/N planet = {SNR_final:.3f}", fontsize=14)
         im = ax[1].imshow(data_noise, origin="lower", cmap="Blues")
@@ -338,7 +501,7 @@ def SNR_profil_cc(cc_maps, position_planet, plot_dist=False, plot_noise=False, p
         if save_fig and path:
             plt.savefig(path + "SNR_method.pdf")
         plt.show()
-
+ 
     return SNR_final, SNR_1spaxel, cc
 
 
